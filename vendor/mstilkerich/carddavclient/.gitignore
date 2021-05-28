@@ -1,0 +1,12 @@
+.phpunit.result.cache
+.*.swp
+/.phpdoc/
+/test*.php
+/*.log
+/tags
+/composer.lock
+/vendor
+/testreports
+/tests/interop/AccountData.php
+/xml
+/doc/api
