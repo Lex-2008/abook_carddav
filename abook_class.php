@@ -48,7 +48,7 @@ Config::init();
 class abook_carddav extends addressbook_backend {
     var $btype = 'local';
     var $bname = 'carddav';
-    var $writeable = false;
+    var $writeable = true;
       
     /* ========================== Private ======================= */
       
@@ -100,7 +100,7 @@ class abook_carddav extends addressbook_backend {
 	$this->syncmgr = new Sync();
 
 	// initial sync - we don't have a sync-token yet
-        $this->lastSyncToken = $this->syncmgr->synchronize($this->abook, $this->synchandler, ["FN", "N", "EMAIL", "ORG"], "");
+        $this->lastSyncToken = $this->syncmgr->synchronize($this->abook, $this->synchandler, ["FN", "N", "EMAIL", "ORG", "UID"], "");
 
       return true;
     }
@@ -163,19 +163,18 @@ class abook_carddav extends addressbook_backend {
         $ret = array();
 
 	// list all addresses having an email
-	$all=$this->abook->query(['EMAIL' => "//"],["FN", "N", "EMAIL", "ORG"]);
+	$all=$this->abook->query(['EMAIL' => "//"],["FN", "N", "EMAIL", "ORG", "UID"]);
 	/*
 	Returns an array of matched VCards:
 	The keys of the array are the URIs of the vcards
 	The values are associative arrays with keys etag (type: string) and vcard (type: VCard)
 	*/
-	$id=1;
 	foreach($all as $uri => $one) {
 		$vcard = $one['vcard'];
 		$names = $vcard->N->getParts();
 		// last,first,additional,prefix,suffix
 		array_push($ret,array(
-			      'nickname' => 'id'.$id++,
+			      'nickname' => (string)$vcard->UID,
                                   'name' => (string)$vcard->FN,
                              'firstname' => (string)$names[1],
                               'lastname' => (string)$names[0],
