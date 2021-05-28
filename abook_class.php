@@ -20,6 +20,17 @@ use MStilkerich\CardDavClient\Services\{Discovery, Sync, SyncHandler};
 use Psr\Log\{AbstractLogger, NullLogger, LogLevel};
 use Sabre\VObject\Component\VCard;
 
+class StdoutLogger extends AbstractLogger
+{
+    public function log($level, $message, array $context = array())
+    {
+        // if ($level !== LogLevel::DEBUG) {
+            $ctx = empty($context) ? "" : json_encode($context);
+            echo $message . $ctx . "\n";
+        // }
+    }
+}
+
 class NullSyncHandler implements SyncHandler
 {
     public function addressObjectChanged(string $uri, string $etag, ?VCard $card): void
@@ -40,7 +51,8 @@ class NullSyncHandler implements SyncHandler
     }
 }
 
-Config::init();
+$log = new StdoutLogger();
+Config::init($log, $log);
 
 /**
  * address book carddav backend class
