@@ -1,27 +1,29 @@
 <?php
 /**
- * plugins/abook_backend_template/functions.php -- Functions used by plugin
+ * plugins/abook_carddav/abook_class.php -- main class
  *
+ * SquirrelMail Address Book CardDAV Backend
+ * Copyright (C) 2021 Aleksei Shpakovsky
+ * This program is licensed under GPLv3. See COPYING for details
+ * based on:
  * SquirrelMail Address Book Backend template
  * Copyright (C) 2004 Tomas Kuliavas <tokul@users.sourceforge.net>
  * This program is licensed under GPL. See COPYING for details
- *
- * $Id: abook_class.php,v 1.1.1.1 2004/03/21 10:36:27 tomas Exp $
  */
 
 /**
- * address book template backend class
+ * address book carddav backend class
  */
-class abook_template extends addressbook_backend {
+class abook_carddav extends addressbook_backend {
     var $btype = 'local';
-    var $bname = 'template';
+    var $bname = 'carddav';
     
     var $writeable = true;
       
     /* ========================== Private ======================= */
       
     /* Constructor */
-    function abook_template($param) {
+    function abook_carddav($param) {
         $this->sname = _("New address book");
          
         if (is_array($param)) {
@@ -192,5 +194,5 @@ class abook_template extends addressbook_backend {
 	// Return error message if operation fails
         return $this->set_error(_("Address modify operation failed"));
     }
-} /* End of class abook_template */
+} /* End of class abook_carddav */
 ?>
