@@ -1,0 +1,3 @@
+#!/bin/sh
+xgettext --keyword=_ -keyword=N_  --default-domain=abook_template -C \
+    -c ../*.php --output=abook_template.pot

@@ -1,0 +1,55 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2004-03-21 12:29+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../abook_class.php:25
+msgid "New address book"
+msgstr ""
+
+#: ../abook_class.php:132 ../abook_class.php:158 ../abook_class.php:178
+msgid "Addressbook is read-only"
+msgstr ""
+
+#: ../abook_class.php:138
+#, c-format
+msgid "User '%s' already exist"
+msgstr ""
+
+#. Return error message if operation fails
+#: ../abook_class.php:148
+msgid "Address add operation failed"
+msgstr ""
+
+#. Return error message if operation fails
+#: ../abook_class.php:167
+msgid "Address delete operation failed"
+msgstr ""
+
+#: ../abook_class.php:184
+#, c-format
+msgid "User '%s' does not exist"
+msgstr ""
+
+#. Return error message if operation fails
+#: ../abook_class.php:193
+msgid "Address modify operation failed"
+msgstr ""
+
+#. FIXME: add your backend init options in array()
+#: ../setup.php:42
+msgid "Address Book Template"
+msgstr ""

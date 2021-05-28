@@ -1,0 +1,53 @@
+#!/bin/sh
+
+# **
+# ** This script merges global PO to locale PO files.
+# ** It creates a backup of the old PO file as abook_template.po.bak
+# ** and puts the merged version in abook_template.po
+# **
+# ** Usage:   mergepo <locale id>
+# ** Example: mergepo es_ES
+# **
+# ** Philipe Mingo <mingo@rotedic.com>
+# ** Konstantin Riabitsev <icon@duke.edu>
+# **
+# **  $Id: mergepo,v 1.1.1.1 2004/03/21 10:36:27 tomas Exp $
+
+if [ -z "$1" ]; then
+ echo "USAGE: mergepo [localename]"
+ exit 1
+fi
+
+WORKDIR=../locale
+LOCALEDIR=$WORKDIR/$1
+
+if [ ! -d $LOCALEDIR ]; then
+ # lessee if it's been renamed.
+ DCOUNT=`find $WORKDIR/ -name $1* | wc -l` 
+ if [ $DCOUNT -eq 1 ]; then 
+  # aha
+  LOCALEDIR=`find $WORKDIR/ -name $1*`
+ elif [ $DCOUNT -gt 1 ]; then
+  # err out
+  echo "More than one locale matching this name found:"
+  find $WORKDIR/ -name $1*
+  echo "You have to be more specific."
+  exit 1
+ fi
+fi
+
+echo "Merging $LOCALEDIR/LC_MESSAGES/abook_template.po"
+mv $LOCALEDIR/LC_MESSAGES/abook_template.po \
+     $LOCALEDIR/LC_MESSAGES/abook_template.po.bak 
+msgmerge $LOCALEDIR/LC_MESSAGES/abook_template.po.bak ../po/abook_template.pot > \
+     $LOCALEDIR/LC_MESSAGES/abook_template.po
+
+# msgmerge will split long lines, such as the RCS Id line. If it did split
+# it, join the pieces back together.
+ed -s $LOCALEDIR/LC_MESSAGES/abook_template.po << END
+/^"Project-Id-Version:/v/\\n"$/j\\
+s/""//
+wq
+END
+
+echo "Old po file renamed to abook_template.po.bak"

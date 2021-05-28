@@ -1,0 +1,18 @@
+------
+abook_backend_template - Address Book Backend template
+------
+
+This is not real plugin. It is just template that can be 
+used to create special address book backends for SquirrelMail.
+
+WARNING:
+Plugin relies on hooks, that are not included in main squirrelmail
+package. See patch/addressbook.php.diff
+
+***
+* Changelog
+***
+2004-03-21
+ - initial release
+
+$Date: 2004/03/21 10:36:27 $

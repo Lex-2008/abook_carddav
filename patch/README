@@ -1,0 +1,4 @@
+These patches enable extra hooks used by plugin
+
+patches can be applied with 'patch -p 1 < patchname' command
+issued in main squirrelmail directory.
