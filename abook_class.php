@@ -11,20 +11,50 @@
  * This program is licensed under GPL. See COPYING for details
  */
 
+require 'quickconfig.php';
+require 'vendor/autoload.php';
+
+use MStilkerich\CardDavClient\{Account, AddressbookCollection, Config};
+use MStilkerich\CardDavClient\Services\{Discovery, Sync, SyncHandler};
+
+use Psr\Log\{AbstractLogger, NullLogger, LogLevel};
+use Sabre\VObject\Component\VCard;
+
+class NullSyncHandler implements SyncHandler
+{
+    public function addressObjectChanged(string $uri, string $etag, ?VCard $card): void
+    {
+    }
+
+    public function addressObjectDeleted(string $uri): void
+    {
+    }
+
+    public function getExistingVCardETags(): array
+    {
+        return [];
+    }
+
+    public function finalizeSync(): void
+    {
+    }
+}
+
+Config::init();
+
 /**
  * address book carddav backend class
  */
 class abook_carddav extends addressbook_backend {
     var $btype = 'local';
     var $bname = 'carddav';
-    
-    var $writeable = true;
+    var $writeable = false;
       
     /* ========================== Private ======================= */
       
     /* Constructor */
     function abook_carddav($param) {
-        $this->sname = _("New address book");
+        $this->sname = _("carddav address book");
          
         if (is_array($param)) {
             if (!empty($param['name'])) {
@@ -50,7 +80,29 @@ class abook_carddav extends addressbook_backend {
      *
      */
     function open() {
-      // ADDME: backend open function
+      // backend open function
+      $this->$account = new Account(DISCOVERY_URI, USERNAME, PASSWORD);
+	// Discover the addressbooks for that account
+	try {
+	    $discover = new Discovery();
+	    $abooks = $discover->discoverAddressbooks($account);
+	} catch (\Exception $e) {
+	    // $log->error("!!! Error during addressbook discovery: " . $e->getMessage());
+	    exit(1);
+	}
+	if (count($abooks) <= 0) {
+	    // $log->warning("Cannot proceed because no addressbooks were found - exiting");
+	    exit(0);
+	}
+	//////////////////////////////////////////////////////////
+	// THE FOLLOWING SHOWS HOW TO PERFORM A SYNCHRONIZATION //
+	//////////////////////////////////////////////////////////
+	$this->abook = $abooks[0];
+	$this->synchandler = new NullSyncHandler();
+	$this->syncmgr = new Sync();
+
+	// initial sync - we don't have a sync-token yet
+        $this->lastSyncToken = $this->syncmgr->synchronize($this->abook, $this->synchandler, ["FN", "N", "EMAIL", "ORG"], "");
 
       return true;
     }
@@ -82,10 +134,11 @@ class abook_carddav extends addressbook_backend {
      * Lookup alias
      * @param alias string
      */
-    function lookup($alias) {
-        if (empty($alias)) {
+    function lookup($value, $field=SM_ABOOK_FIELD_NICKNAME) {
+        // if (empty($alias)) {
             return array();
-        }
+        // }
+	/*
          
         $alias = strtolower($alias);
 
@@ -101,6 +154,7 @@ class abook_carddav extends addressbook_backend {
                        'source' => $this->sname);
 
         return $ret;
+	 */
     }
 
     /**
@@ -110,16 +164,27 @@ class abook_carddav extends addressbook_backend {
     function list_addr() {
         $ret = array();
 
-	// ADDME: list all addresses function
-
-        array_push($ret,array('nickname' => "nickname",
-                                  'name' => "firstname lastname",
-                             'firstname' => "firstname",
-                              'lastname' => "lastname",
-                        	 'email' => "email@address",
-                        	 'label' => "info",
+	// list all addresses having an email
+	$all=this->$abook->query(['EMAIL' => "//"],["FN", "N", "EMAIL", "ORG"]);
+	/*
+	Returns an array of matched VCards:
+	The keys of the array are the URIs of the vcards
+	The values are associative arrays with keys etag (type: string) and vcard (type: VCard)
+	*/
+	foreach($all as $uri => $one) {
+		$vcard = $one['vcard'];
+		$names = $vcard->N->getParts();
+		// last,first,additional,prefix,suffix
+		array_push($ret,array(
+			      'nickname' => $uri,
+                                  'name' => (string)$vcard->FN,
+                             'firstname' => (string)$names[1],
+                              'lastname' => (string)$names[0],
+                        	 'email' => (string)$vcard->EMAIL,
+                        	 'label' => (string)$vcard->ORG,
                                'backend' => $this->bnum,
                         	'source' => $this->sname));
+	}
 
         return $ret;
     }
@@ -135,19 +200,32 @@ class abook_carddav extends addressbook_backend {
         }
 
         /* See if user exist already */
+	/*
         $ret = $this->lookup($userdata['nickname']);
         if (!empty($ret)) {
             return $this->set_error(sprintf(_("User '%s' already exist"),
                                             $ret['nickname']));
         }
+	 */
+	try {
+	    $vcard =  new VCard([
+		'FN'  => $userdata['name'],
+		'N'   => [$userdata['lastname'], $userdata['firstname'], '', '', ''],
+		'EMAIL' => $userdata['email'],
+		'ORG' => $userdata['label'],
+	    ]);
 
-	// ADDME: insert address function
+		// insert address function
+		$this->abook->createCard($vcard);
+		// now a sync should return that card as well - lets see!
+		$this->lastSyncToken = $this->syncmgr->synchronize($this->abook, $this->synchandler, ["FN", "N", "EMAIL", "ORG"], $this->lastSyncToken);
 
-	// FIXME:
-	// return true if operation is succesful.
-	return true;
-	// Return error message if operation fails
-        return $this->set_error(_("Address add operation failed"));
+		// return true if operation is succesful.
+		return true;
+	} catch (\Exception $e) {
+		// Return error message if operation fails
+		return $this->set_error(_("Address add operation failed: ") . $e->getMessage());
+       }
     }
 
     /**
