@@ -81,11 +81,11 @@ class abook_carddav extends addressbook_backend {
      */
     function open() {
       // backend open function
-      $this->$account = new Account(DISCOVERY_URI, USERNAME, PASSWORD);
+      $this->account = new Account(DISCOVERY_URI, USERNAME, PASSWORD);
 	// Discover the addressbooks for that account
 	try {
 	    $discover = new Discovery();
-	    $abooks = $discover->discoverAddressbooks($account);
+	    $abooks = $discover->discoverAddressbooks($this->account);
 	} catch (\Exception $e) {
 	    // $log->error("!!! Error during addressbook discovery: " . $e->getMessage());
 	    exit(1);
@@ -165,7 +165,7 @@ class abook_carddav extends addressbook_backend {
         $ret = array();
 
 	// list all addresses having an email
-	$all=this->$abook->query(['EMAIL' => "//"],["FN", "N", "EMAIL", "ORG"]);
+	$all=$this->abook->query(['EMAIL' => "//"],["FN", "N", "EMAIL", "ORG"]);
 	/*
 	Returns an array of matched VCards:
 	The keys of the array are the URIs of the vcards
