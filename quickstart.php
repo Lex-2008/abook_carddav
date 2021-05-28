@@ -4,19 +4,8 @@
 //   CONFIGURATION OF ACCOUNT DATA   //
 ///////////////////////////////////////
 
-// To run, configure the account data in this block and remove / comment out
-// the following line with the exit statement
 // DO NOT SERVE THIS SCRIPT VIA WEBSERVER
-echo "Please configure first - exiting\n"; exit(1);
-
-const DISCOVERY_URI = "example.com";
-const USERNAME = "myUserName@example.com";
-
-// Note: for providers using 2-factor authentication (common today, e.g. Apple iCloud,
-// Google, Nextcloud if 2FA enabled by user), you need to provide an application-specific
-// password here, not your account password. You can typically create such
-// application-specific passwords in the account settings of your provider.
-const PASSWORD = "theSecretPassword";
+require 'quickconfig.php';
 
 ///////////////////////////////////////
 // END CONFIGURATION OF ACCOUNT DATA //
