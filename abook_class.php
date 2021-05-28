@@ -69,7 +69,7 @@ class abook_carddav extends addressbook_backend {
                $this->listing = $param['listing'];
             }
 
-            $this->open(true);
+            return $this->open(true);
         }
         else {
             return $this->set_error('Invalid argument to constructor');
@@ -87,12 +87,15 @@ class abook_carddav extends addressbook_backend {
 	    $discover = new Discovery();
 	    $abooks = $discover->discoverAddressbooks($this->account);
 	} catch (\Exception $e) {
-	    // $log->error("!!! Error during addressbook discovery: " . $e->getMessage());
-	    exit(1);
+		echo "Error during addressbook discovery: " . $e->getMessage();
+		return $this->set_error(_("Error during addressbook discovery: ") . $e->getMessage());
+	    // exit(1);
 	}
 	if (count($abooks) <= 0) {
 	    // $log->warning("Cannot proceed because no addressbooks were found - exiting");
-	    exit(0);
+		echo "Cannot proceed because no addressbooks were found - exiting";
+		return $this->set_error(_("Cannot proceed because no addressbooks were found - exiting"));
+	    // exit(0);
 	}
 	//////////////////////////////////////////////////////////
 	// THE FOLLOWING SHOWS HOW TO PERFORM A SYNCHRONIZATION //
