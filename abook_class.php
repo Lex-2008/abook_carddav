@@ -169,12 +169,13 @@ class abook_carddav extends addressbook_backend {
 	The keys of the array are the URIs of the vcards
 	The values are associative arrays with keys etag (type: string) and vcard (type: VCard)
 	*/
+	$id=1;
 	foreach($all as $uri => $one) {
 		$vcard = $one['vcard'];
 		$names = $vcard->N->getParts();
 		// last,first,additional,prefix,suffix
 		array_push($ret,array(
-			      'nickname' => $uri,
+			      'nickname' => 'id'.$id++,
                                   'name' => (string)$vcard->FN,
                              'firstname' => (string)$names[1],
                               'lastname' => (string)$names[0],
