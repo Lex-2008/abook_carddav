@@ -28,7 +28,7 @@ Config::init();
 class abook_carddav extends addressbook_backend {
     var $btype = 'local';
     var $bname = 'carddav';
-    var $writeable = false;
+    var $writeable = true;
       
     /* ========================== Private ======================= */
       
