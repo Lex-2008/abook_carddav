@@ -35,21 +35,16 @@ function abook_carddav_init(&$argv) {
     $abook = &$argv[1];
     $r = &$argv[2];
 
-    // FIXME: if you want to include translations with your plugin
-    //        change this 'locale' to 'plugins/plugin-name/locale'
     bindtextdomain ('abook_carddav', SM_PATH . 'locale');
     textdomain ('abook_carddav');
 
-    // FIXME: add your backend init options in array()
-    $r=$abook->add_backend('carddav',array('name'=>_("Address Book Template")));
+    $r=$abook->add_backend('carddav',array('name'=>_("CardDAV Address Book")));
 
     bindtextdomain ('squirrelmail', SM_PATH . 'locale');
     textdomain ('squirrelmail');
 }
 
 function abook_carddav_class() {
-    // FIXME: if you want to include translations with your plugin
-    //        change this 'locale' to 'plugins/plugin-name/locale'
     bindtextdomain ('abook_carddav', SM_PATH . 'locale');
     textdomain ('abook_carddav');
 
