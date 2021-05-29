@@ -293,18 +293,20 @@ class abook_carddav extends addressbook_backend {
     }
 
     /**
-     * Delete address
-     * @param alias
+     * Delete addresses
+     * @param aliases array of nicknames to delete
      * @return boolean
      */
-    function remove($alias) {
+    function remove($aliases) {
         if (!$this->writeable) {
             return $this->set_error(_("Addressbook is read-only"));
         }
 
-	// TODO: edit this if we use different nick-naming scheme
-	$uri = $this->abook->getUriPath() . $alias;
-	$this->abook->deleteCard($uri);
+	foreach($aliases as $alias) {
+		// TODO: edit this if we use different nick-naming scheme
+		$uri = $this->abook->getUriPath() . $alias;
+		$this->abook->deleteCard($uri);
+	}
 
 	// FIXME:
 	// return true if operation is succesful.
