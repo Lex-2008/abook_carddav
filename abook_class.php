@@ -189,7 +189,7 @@ class abook_carddav extends addressbook_backend {
 	 */
 	try {
 	    $vcard =  new VCard([
-		'FN'  => $userdata['name'],
+		'FN'  => $userdata['firstname'] . ' ' . $userdata['lastname'],
 		'N'   => [$userdata['lastname'], $userdata['firstname'], '', '', ''],
 		'EMAIL' => $userdata['email'],
 		'ORG' => $userdata['label'],
