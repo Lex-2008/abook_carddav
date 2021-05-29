@@ -20,26 +20,6 @@ use MStilkerich\CardDavClient\Services\{Discovery, Sync, SyncHandler};
 use Psr\Log\{AbstractLogger, NullLogger, LogLevel};
 use Sabre\VObject\Component\VCard;
 
-class NullSyncHandler implements SyncHandler
-{
-    public function addressObjectChanged(string $uri, string $etag, ?VCard $card): void
-    {
-    }
-
-    public function addressObjectDeleted(string $uri): void
-    {
-    }
-
-    public function getExistingVCardETags(): array
-    {
-        return [];
-    }
-
-    public function finalizeSync(): void
-    {
-    }
-}
-
 Config::init();
 
 /**
@@ -92,16 +72,7 @@ class abook_carddav extends addressbook_backend {
 	if (count($abooks) <= 0) {
 	    return $this->set_error("Cannot proceed because no addressbooks were found - exiting");
 	}
-	//////////////////////////////////////////////////////////
-	// THE FOLLOWING SHOWS HOW TO PERFORM A SYNCHRONIZATION //
-	//////////////////////////////////////////////////////////
 	$this->abook = $abooks[0];
-	$this->synchandler = new NullSyncHandler();
-	$this->syncmgr = new Sync();
-
-	// initial sync - we don't have a sync-token yet
-        $this->lastSyncToken = $this->syncmgr->synchronize($this->abook, $this->synchandler, ["FN", "N", "EMAIL", "ORG"], "");
-
       return true;
     }
 
@@ -217,8 +188,6 @@ class abook_carddav extends addressbook_backend {
 
 		// insert address function
 		$this->abook->createCard($vcard);
-		// now a sync should return that card as well - lets see!
-		$this->lastSyncToken = $this->syncmgr->synchronize($this->abook, $this->synchandler, ["FN", "N", "EMAIL", "ORG"], $this->lastSyncToken);
 
 		// return true if operation is succesful.
 		return true;
