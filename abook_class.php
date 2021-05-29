@@ -62,6 +62,13 @@ class abook_carddav extends addressbook_backend {
     function open() {
       // backend open function
       $this->account = new Account(DISCOVERY_URI, USERNAME, PASSWORD);
+	// Use stored addressbook uri if it exists
+        if(defined('abook_uri')){
+                $this->abook = new AddressbookCollection(abook_uri, $this->account);
+                // TODO: check that it's valid
+              return true;
+        }
+
 	// Discover the addressbooks for that account
 	try {
 	    $discover = new Discovery();
@@ -73,6 +80,8 @@ class abook_carddav extends addressbook_backend {
 	    return $this->set_error("Cannot proceed because no addressbooks were found - exiting");
 	}
 	$this->abook = $abooks[0];
+	// HINT: use this line to get your discovered addressbook URI
+	// echo "discovered: " . $this->abook->getUri();
       return true;
     }
 
