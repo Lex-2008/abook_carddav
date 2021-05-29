@@ -97,47 +97,132 @@ class abook_carddav extends addressbook_backend {
     /* ========================== Public ======================== */
 
     /**
-     * Search address function
-     * @param expr string search expression
+     * Search addressesbook for entries where any field matches expr.
+     * It's expected to support * and ? wildcards, and search all fields in any position.
+     * Note that currently, it does not.
+     * @param expr string search expression.
+     * @return array of addresses (arrays)
      */
     function search($expr) {
         $ret = array();
 
-	// ADDME: search by nickname function
+        /* To be replaced by advanded search expression parsing */
+        if(is_array($expr)) { return; }
+
+	// list all addresses where any of these fields contains $expr.
+	// wildcards not supported.
+	// Also note that we don't check for presence of email here,
+	// this will be filtered out later
+	$all=$this->abook->query(['FN' => "/$expr/", 'EMAIL' => "/$expr/", 'ORG' => "/$expr/", 'NOTE' => "/$expr/"],["FN", "N", "EMAIL", "ORG"]);
+	/*
+	Returns an array of matched VCards:
+	The keys of the array are the URIs of the vcards
+	The values are associative arrays with keys etag (type: string) and vcard (type: VCard)
+	*/
+
+	$abook_uri_len=strlen($this->abook->getUriPath());
+	foreach($all as $uri => $one) {
+		$vcard = $one['vcard'];
+		if(!isset($vcard->EMAIL)) { continue; }
+		$names = $vcard->N->getParts();
+		// last,first,additional,prefix,suffix
+		array_push($ret,array(
+			      'nickname' => substr($uri, $abook_uri_len),
+                                  'name' => (string)$vcard->FN,
+                             'firstname' => (string)$names[1],
+                              'lastname' => (string)$names[0],
+                        	 'email' => (string)$vcard->EMAIL,
+                        	 'label' => (string)$vcard->ORG,
+                               'backend' => $this->bnum,
+                        	'source' => $this->sname));
+	}
+
 
         return $ret;
     }
      
     /**
-     * Lookup alias
-     * @param alias string
+     * Lookup by the indicated field
+     *
+     * @param string  $value Value to look up
+     * @param integer $field The field to look in, should be one
+     *                       of the SM_ABOOK_FIELD_* constants
+     *                       defined in functions/constants.php
+     *                       (OPTIONAL; defaults to nickname field)
+     *                       NOTE: uniqueness is only guaranteed
+     *                       when the nickname field is used here;
+     *                       otherwise, the first matching address
+     *                       is returned.
+     * @return a single address (array)
      */
     function lookup($value, $field=SM_ABOOK_FIELD_NICKNAME) {
-        // if (empty($alias)) {
+
+        if (empty($value)) {
             return array();
-        // }
+        }
+
+	if($field == SM_ABOOK_FIELD_NICKNAME) {
+		// TODO: edit this if we use different nick-naming scheme
+		$uri = $this->abook->getUriPath() . $value;
+		$one = $this->abook->getCard($uri);
+		/* returns Associative array with keys:
+			etag(string): Entity tag of the returned card
+			vcf(string): VCard as string
+			vcard(VCard): VCard as Sabre/VObject VCard
+		 */
+		$vcard = $one['vcard'];
+		$names = $vcard->N->getParts();
+		return array(
+			'nickname' => substr($uri, $abook_uri_len),
+			'name' => (string)$vcard->FN,
+			'firstname' => (string)$names[1],
+			'lastname' => (string)$names[0],
+			'email' => (string)$vcard->EMAIL,
+			'label' => (string)$vcard->ORG,
+			'backend' => $this->bnum,
+			'source' => $this->sname);
+	}
+	if($field == SM_ABOOK_FIELD_FIRSTNAME) {
+		// TODO: this will be harder
+	}
+	if($field == SM_ABOOK_FIELD_LASTNAME) {
+		$filter=['N' => "/$value;/^", 'EMAIL' => "//"];
+	}
+	if($field == SM_ABOOK_FIELD_EMAIL) {
+		$filter=['EMAIL' => "/$value/="];
+	}
+	if($field ==  SM_ABOOK_FIELD_LABEL) {
+		$filter=['ORG' => "/$value/="];
+	}
+	if(!isset($filter)) { return array(); }
+
+	$all=$this->abook->query($filter,["FN", "N", "EMAIL", "ORG"],true,1);
 	/*
-         
-        $alias = strtolower($alias);
-
-	// ADDME: address lookup function
-
-	$ret = array('nickname' => "nickname",
-                         'name' => "firstname lastname",
-    	            'firstname' => "firstname",
-                     'lastname' => "lastname",
-            		'email' => "email@address",
-                	'label' => "info",
-                      'backend' => $this->bnum,
-                       'source' => $this->sname);
-
-        return $ret;
+	Returns an array of matched VCards:
+	The keys of the array are the URIs of the vcards
+	The values are associative arrays with keys etag (type: string) and vcard (type: VCard)
 	 */
+	$abook_uri_len=strlen($this->abook->getUriPath());
+	foreach($all as $uri => $one) {
+		$vcard = $one['vcard'];
+		if(!isset($vcard->EMAIL)) { continue; }
+		$names = $vcard->N->getParts();
+		// last,first,additional,prefix,suffix
+		return array(
+			'nickname' => substr($uri, $abook_uri_len),
+			'name' => (string)$vcard->FN,
+			'firstname' => (string)$names[1],
+			'lastname' => (string)$names[0],
+			'email' => (string)$vcard->EMAIL,
+			'label' => (string)$vcard->ORG,
+			'backend' => $this->bnum,
+			'source' => $this->sname);
+	}
     }
 
     /**
      * List all addresses
-     * @return array
+     * @return array of addresses (arrays)
      */
     function list_addr() {
         $ret = array();
@@ -153,6 +238,7 @@ class abook_carddav extends addressbook_backend {
 	$abook_uri_len=strlen($this->abook->getUriPath());
 	foreach($all as $uri => $one) {
 		$vcard = $one['vcard'];
+		// if(!isset($vcard->EMAIL)) { continue; }
 		$names = $vcard->N->getParts();
 		// last,first,additional,prefix,suffix
 		array_push($ret,array(
@@ -216,7 +302,9 @@ class abook_carddav extends addressbook_backend {
             return $this->set_error(_("Addressbook is read-only"));
         }
 
-	// ADD: delete address function
+	// TODO: edit this if we use different nick-naming scheme
+	$uri = $this->abook->getUriPath() . $value;
+	$abook->deleteCard($uri);
 
 	// FIXME:
 	// return true if operation is succesful.
@@ -237,12 +325,30 @@ class abook_carddav extends addressbook_backend {
         }
 
          /* See if user exist */
-        $ret = $this->lookup($alias);
-        if (empty($ret)) {
-            return $this->set_error(sprintf(_("User '%s' does not exist"),
-                                            $alias));
-        }
-	// ADD: modify address function
+	// TODO: edit this if we use different nick-naming scheme
+	$uri = $this->abook->getUriPath() . $value;
+	$one = $this->abook->getCard($uri);
+	/* returns Associative array with keys:
+		etag(string): Entity tag of the returned card
+		vcf(string): VCard as string
+		vcard(VCard): VCard as Sabre/VObject VCard
+	 */
+	$vcard = $one['vcard'];
+	// TODO: if no vcard
+	$names = $vcard->N->getParts();
+	// last,first,additional,prefix,suffix
+	$names[0]=$userdata['lastname'];
+	$names[1]=$userdata['firstname'];
+	$vcard->N = $names;
+	if($names[2]){
+		$vcard->FN = trim($names[3].' '.$names[1].' '.$names[2].' '.$names[0].' '.$names[4]);
+	} else {
+		$vcard->FN = trim($names[3].' '.$names[1].' '.$names[0].' '.$names[4]);
+	}
+	// [prefix=3] first=1 [additional=2] last=0 [suffix=4]
+	$vcard->EMAIL = $userdata['email'];
+	$vcard->ORG = $userdata['label'];
+	$this->abook->updateCard($uri, $vcard, $one['etag']);
 
 	// FIXME:
 	// return true if operation is succesful.
