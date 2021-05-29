@@ -161,6 +161,7 @@ class abook_carddav extends addressbook_backend {
             return array();
         }
 
+	$abook_uri_len=strlen($this->abook->getUriPath());
 	if($field == SM_ABOOK_FIELD_NICKNAME) {
 		// TODO: edit this if we use different nick-naming scheme
 		$uri = $this->abook->getUriPath() . $value;
@@ -202,7 +203,6 @@ class abook_carddav extends addressbook_backend {
 	The keys of the array are the URIs of the vcards
 	The values are associative arrays with keys etag (type: string) and vcard (type: VCard)
 	 */
-	$abook_uri_len=strlen($this->abook->getUriPath());
 	foreach($all as $uri => $one) {
 		$vcard = $one['vcard'];
 		if(!isset($vcard->EMAIL)) { continue; }
@@ -303,8 +303,8 @@ class abook_carddav extends addressbook_backend {
         }
 
 	// TODO: edit this if we use different nick-naming scheme
-	$uri = $this->abook->getUriPath() . $value;
-	$abook->deleteCard($uri);
+	$uri = $this->abook->getUriPath() . $alias;
+	$this->abook->deleteCard($uri);
 
 	// FIXME:
 	// return true if operation is succesful.
@@ -326,7 +326,7 @@ class abook_carddav extends addressbook_backend {
 
          /* See if user exist */
 	// TODO: edit this if we use different nick-naming scheme
-	$uri = $this->abook->getUriPath() . $value;
+	$uri = $this->abook->getUriPath() . $alias;
 	$one = $this->abook->getCard($uri);
 	/* returns Associative array with keys:
 		etag(string): Entity tag of the returned card
