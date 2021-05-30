@@ -11,7 +11,6 @@
  * This program is licensed under GPL. See COPYING for details
  */
 
-require 'quickconfig.php';
 require 'vendor/autoload.php';
 
 use MStilkerich\CardDavClient\{Account, AddressbookCollection, Config};
