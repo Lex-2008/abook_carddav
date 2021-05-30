@@ -32,6 +32,7 @@ function squirrelmail_plugin_init_abook_carddav() {
  * Initialized address book backend
  */
 function abook_carddav_init(&$argv) {
+  global $username, $data_dir;
     // Get the arguments
     $hookName = &$argv[0];
     $abook = &$argv[1];
@@ -47,7 +48,7 @@ function abook_carddav_init(&$argv) {
     $abook_password = getPref($data_dir, $username, 'plugin_abook_carddav_password');
     $abook_writeable = getPref($data_dir, $username, 'plugin_abook_carddav_writeable');
     $abook_listing = getPref($data_dir, $username, 'plugin_abook_carddav_listing');
-    if(substr_compare($abook_uri, 'http', 0)) {
+    if(substr($abook_uri, 0,4) == 'http'){
 	    $r=$abook->add_backend('carddav',array(
 		    'name'=>_("CardDAV Address Book"),
 		    'abook_uri'=>$abook_uri,
@@ -64,12 +65,13 @@ function abook_carddav_init(&$argv) {
 }
 
 function abook_carddav_class() {
+  global $username, $data_dir;
     bindtextdomain ('abook_carddav', SM_PATH . 'locale');
     textdomain ('abook_carddav');
 
     // load file only if $abook_uri is set
     $abook_uri = getPref($data_dir, $username, 'plugin_abook_carddav_abook_uri');
-    if(substr_compare($abook_uri, 'http', 0)) {
+    if(substr($abook_uri, 0,4) == 'http'){
 	    require_once(SM_PATH . 'plugins/abook_carddav/abook_class.php');
     }
 
@@ -85,16 +87,21 @@ function abook_carddav_optpage() {
     $optpage_data['grps']['abook_carddav'] = _("CardDAV Address Book");
     $optpage_data['vals']['abook_carddav'][] = array(
 	    'name'    => 'plugin_abook_carddav_abook_uri',
-	    'caption' => _("URI of addressbook - MUST start with 'http' (both 'http://' and 'https://' are ok)"),
-	    'trailing_text' => _("use <a href=\"...\">discovery</a> page to get one"),
+	    'caption' => _("URI of addressbook"),
 	    'type'    => SMOPT_TYPE_STRING,
 	    // 'initial_value' => $abook_uri,
     );
     $optpage_data['vals']['abook_carddav'][] = array(
 	    'name'    => 'plugin_abook_carddav_base_uri',
-	    'caption' => _("base URI - usually a server name with protocol and port"),
-	    'trailing_text' => _("use <a href=\"...\">discovery</a> page to get one"),
+	    'caption' => _("base URI"),
 	    'type'    => SMOPT_TYPE_STRING,
+	    // 'initial_value' => $abook_uri,
+    );
+    $optpage_data['vals']['abook_carddav'][] = array(
+	    'name'    => 'plugin_abook_carddav_dicsover_link',
+	    'caption' => _("Discover"),
+	    'type'    => SMOPT_TYPE_COMMENT,
+	    'comment' => _("Use <a href=\"...\">discover</a> page to get these values"),
 	    // 'initial_value' => $abook_uri,
     );
     $optpage_data['vals']['abook_carddav'][] = array(
