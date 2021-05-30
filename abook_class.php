@@ -63,13 +63,17 @@ class abook_carddav extends addressbook_backend {
      * for non-writeable addressbooks, 'nickname' doesn't matter that much -
      *   so we put ORG there
      */
-    function vcard2sq($uri, $vcard, $email=null) {
+    function vcard2sq($uri, $vcard, $email=null, $tel=null) {
 	    if($this->writeable) {
 		    $nickname = substr($uri, $this->abook_uri_len);
 		    $label = (string)$vcard->ORG;
 	    } else {
 		    $nickname = (string)$vcard->ORG;
-		    $label = '';
+		    if($tel) {
+			    $label = $tel;
+		    } else {
+			    $label = (string)$vcard->TEL;
+		    }
 	    }
 	    if(!$email) {
 		    $email = (string)$vcard->EMAIL;
@@ -103,7 +107,9 @@ class abook_carddav extends addressbook_backend {
      */
     function run_query($query, $match_all=false, $limit=0) {
 	$ret = array();
-	$all=$this->abook->query($query,["FN", "N", "EMAIL", "ORG"],$match_all,$limit);
+	$fields = ["FN", "N", "EMAIL", "ORG"];
+	if(!$this->writeable) { $fields[] = "TEL";
+	$all=$this->abook->query($query,$fields,$match_all,$limit);
 	/*
 	Returns an array of matched VCards:
 	The keys of the array are the URIs of the vcards
@@ -117,9 +123,16 @@ class abook_carddav extends addressbook_backend {
 			// all one line per each vcard
 			$ret[] = $this->vcard2sq($uri, $vcard);
 		} else {
+			// pick a TEL for each EMAIL.
+			// if # of TELs is greater than EMAILs - extra are ignored
+			// if # of EMAILs is greater than TELs - empty TELs are shown
+			// TODO: could this be rewritten better?
+			$tels = array();
+			foreach($vcard->TEL as $tel) { $tels[] = (string)$tel; }
+			$i=0;
 			foreach($vcard->EMAIL as $email) {
 				// all one line per each email
-				$ret[] = $this->vcard2sq($uri, $vcard, $email);
+				$ret[] = $this->vcard2sq($uri, $vcard, $email, @$tels[$i++]);
 			}
 		}
 		if($limit == 1) { return $ret[0]; }
