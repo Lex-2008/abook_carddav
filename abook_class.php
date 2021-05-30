@@ -69,7 +69,7 @@ class abook_carddav extends addressbook_backend {
 		    $label = (string)$vcard->ORG;
 	    } else {
 		    $nickname = (string)$vcard->ORG;
-		    $label = (string)$vcard->NOTE;
+		    $label = '';
 	    }
 	    if(!$email) {
 		    $email = (string)$vcard->EMAIL;
@@ -103,7 +103,7 @@ class abook_carddav extends addressbook_backend {
      */
     function run_query($query, $match_all=false, $limit=0) {
 	$ret = array();
-	$all=$this->abook->query($query,["FN", "N", "EMAIL", "ORG", "NOTE"],$match_all,$limit);
+	$all=$this->abook->query($query,["FN", "N", "EMAIL", "ORG"],$match_all,$limit);
 	/*
 	Returns an array of matched VCards:
 	The keys of the array are the URIs of the vcards
