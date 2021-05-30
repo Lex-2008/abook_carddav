@@ -45,7 +45,9 @@ class abook_carddav extends addressbook_backend {
             if (!empty($param['password'])) { $this->password = $param['password']; }
             if (isset($param['writeable'])) { $this->writeable = $param['writeable']; }
             if (isset($param['listing'])) { $this->listing = $param['listing']; }
-            return $this->open();
+	    $this->account = new Account($this->base_uri, $this->username, $this->password, $this->base_uri);
+	    $this->abook = new AddressbookCollection($this->abook_uri, $this->account);
+	    $this->abook_uri_len=strlen($this->abook->getUriPath());
         }
         else {
             return $this->set_error('Invalid argument to constructor');
@@ -53,31 +55,36 @@ class abook_carddav extends addressbook_backend {
     }
 
     /**
-     *
+     * Given a $vcard object and its $uri, returns squirrelmail contact (array).
+     * Optional $email arg overwrites the one stored in vcard.
+     * Respects $this->writeable:
+     * for writeable addressbooks, 'nickname' must be unique identifier -
+     *   in our case, last part of uid id used
+     * for non-writeable addressbooks, 'nickname' doesn't matter that much -
+     *   so we put ORG there
      */
-    function open() {
-	    // backend open function
-	    $this->account = new Account($this->base_uri, $this->username, $this->password, $this->base_uri);
-	    $this->abook = new AddressbookCollection($this->abook_uri, $this->account);
-	    // TODO: check that it's valid
-	    return true;
-
-	    /* TODO: move this to discover page
-	// Discover the addressbooks for that account
-	try {
-	    $discover = new Discovery();
-	    $abooks = $discover->discoverAddressbooks($this->account);
-	} catch (\Exception $e) {
-	    return $this->set_error("!!! Error during addressbook discovery: " . $e->getMessage());
-	}
-	if (count($abooks) <= 0) {
-	    return $this->set_error("Cannot proceed because no addressbooks were found - exiting");
-	}
-	$this->abook = $abooks[0];
-	// HINT: use this line to get your discovered addressbook URI
-	// echo "discovered: " . $this->abook->getUri();
-      return true;
-	     */
+    function vcard2sq($uri, $vcard, $email=null) {
+	    if($this->writeable) {
+		    $nickname = substr($uri, $this->abook_uri_len);
+		    $label = (string)$vcard->ORG;
+	    } else {
+		    $nickname = (string)$vcard->ORG;
+		    $label = '';
+	    }
+	    if(!$email) {
+		    $email = (string)$vcard->EMAIL;
+	    }
+	    $names = $vcard->N->getParts();
+	    // last,first,additional,prefix,suffix
+	    return array(
+		    'nickname' => $nickname,
+		    'name' => (string)$vcard->FN,
+		    'firstname' => (string)$names[1],
+		    'lastname' => (string)$names[0],
+		    'email' => $email,
+		    'label' => $label,
+		    'backend' => $this->bnum,
+		    'source' => $this->sname);
     }
 
     /**
@@ -96,7 +103,6 @@ class abook_carddav extends addressbook_backend {
      */
     function run_query($query, $match_all=false, $limit=0) {
 	$ret = array();
-	// TODO: add nickname to list of fields if $this->writeable
 	$all=$this->abook->query($query,["FN", "N", "EMAIL", "ORG"],$match_all,$limit);
 	/*
 	Returns an array of matched VCards:
@@ -104,26 +110,19 @@ class abook_carddav extends addressbook_backend {
 	The values are associative arrays with keys etag (type: string) and vcard (type: VCard)
 	*/
 
-	$abook_uri_len=strlen($this->abook->getUriPath());
 	foreach($all as $uri => $one) {
 		$vcard = $one['vcard'];
 		if(!isset($vcard->EMAIL)) { continue; }
-		$names = $vcard->N->getParts();
-		// last,first,additional,prefix,suffix
-		// TODO: if !$this->writeable then we want to add one row per each email this vcard has
-		// foreach($vcard->EMAIL as $email) { ... }
-		$value = array(
-			    // TODO: nickname depends on $this->writeable
-			      'nickname' => substr($uri, $abook_uri_len),
-                                  'name' => (string)$vcard->FN,
-                             'firstname' => (string)$names[1],
-                              'lastname' => (string)$names[0],
-                        	 'email' => (string)$vcard->EMAIL,
-                        	 'label' => (string)$vcard->ORG,
-                               'backend' => $this->bnum,
-                        	'source' => $this->sname);
-		if($limit == 1) { return $value; }
-		array_push($ret,$value);
+		if($this->writeable) {
+			// all one line per each vcard
+			$ret[] = $this.vcard2sq($uri, $vcard);
+		} else {
+			foreach($vcard->EMAIL as $email) {
+				// all one line per each email
+				$ret[] = $this.vcard2sq($uri, $vcard, $email);
+			}
+		}
+		if($limit == 1) { return $ret[0]; }
 	}
 	return $ret;
     }
@@ -182,17 +181,7 @@ class abook_carddav extends addressbook_backend {
 			vcard(VCard): VCard as Sabre/VObject VCard
 		 */
 		$vcard = $one['vcard'];
-		$names = $vcard->N->getParts();
-		return array(
-			    // TODO: nickname depends on $this->writeable
-			'nickname' => substr($uri, $abook_uri_len),
-			'name' => (string)$vcard->FN,
-			'firstname' => (string)$names[1],
-			'lastname' => (string)$names[0],
-			'email' => (string)$vcard->EMAIL,
-			'label' => (string)$vcard->ORG,
-			'backend' => $this->bnum,
-			'source' => $this->sname);
+    		return vcard2sq($uri, $vcard);
 	}
 	if($field == SM_ABOOK_FIELD_FIRSTNAME) {
 		// TODO: this will be harder
@@ -307,11 +296,7 @@ class abook_carddav extends addressbook_backend {
 	$names[0]=$userdata['lastname'];
 	$names[1]=$userdata['firstname'];
 	$vcard->N = $names;
-	if($names[2]){
-		$vcard->FN = trim($names[3].' '.$names[1].' '.$names[2].' '.$names[0].' '.$names[4]);
-	} else {
-		$vcard->FN = trim($names[3].' '.$names[1].' '.$names[0].' '.$names[4]);
-	}
+	$vcard->FN = trim($names[3].' '.$names[1].' '.$names[2].' '.$names[0].' '.$names[4]);
 	// [prefix=3] first=1 [additional=2] last=0 [suffix=4]
 	$vcard->EMAIL = $userdata['email'];
 	$vcard->ORG = $userdata['label'];
