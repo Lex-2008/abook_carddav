@@ -201,7 +201,17 @@ class abook_carddav extends addressbook_backend {
     function list_addr() {
 	if(!$this->listing) { return array(); }
 	// list all addresses having an email
-	return $this->run_query(['EMAIL' => "//"]);
+	return array_merge(
+		/*
+		// TODO: a link to switch writeable status
+		array(array(
+			'special_message'=>'The address book is currently in (non)writeable mode. <a href="...">Click here to switch it to (non)writeable mode</a>',
+			'backend' => $this->bnum,
+			'source' => $this->sname,
+		)),
+		 */
+		$this->run_query(['EMAIL' => "//"]));
+
     }
 
     /**
