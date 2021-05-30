@@ -83,46 +83,55 @@ function abook_carddav_optpage() {
   global $optpage_data;
   global $username, $data_dir;
 
+    $abook_uri = getPref($data_dir, $username, 'plugin_abook_carddav_abook_uri');
+    $abook_base_uri = getPref($data_dir, $username, 'plugin_abook_carddav_base_uri');
+    $abook_username = getPref($data_dir, $username, 'plugin_abook_carddav_username');
+    $abook_password = getPref($data_dir, $username, 'plugin_abook_carddav_password');
+    $abook_writeable = getPref($data_dir, $username, 'plugin_abook_carddav_writeable');
+    $abook_listing = getPref($data_dir, $username, 'plugin_abook_carddav_listing');
     sq_change_text_domain('abook_carddav');
     $optpage_data['grps']['abook_carddav'] = _("CardDAV Address Book");
     $optpage_data['vals']['abook_carddav'][] = array(
 	    'name'    => 'plugin_abook_carddav_abook_uri',
 	    'caption' => _("URI of addressbook"),
 	    'type'    => SMOPT_TYPE_STRING,
-	    // 'initial_value' => $abook_uri,
+	    'initial_value' => $abook_uri,
     );
     $optpage_data['vals']['abook_carddav'][] = array(
 	    'name'    => 'plugin_abook_carddav_base_uri',
 	    'caption' => _("base URI"),
 	    'type'    => SMOPT_TYPE_STRING,
-	    // 'initial_value' => $abook_uri,
+	    'initial_value' => $abook_base_uri,
     );
     $optpage_data['vals']['abook_carddav'][] = array(
 	    'name'    => 'plugin_abook_carddav_dicsover_link',
 	    'caption' => _("Discover"),
 	    'type'    => SMOPT_TYPE_COMMENT,
 	    'comment' => _("Use <a href=\"...\">discover</a> page to get these values"),
-	    // 'initial_value' => $abook_uri,
     );
     $optpage_data['vals']['abook_carddav'][] = array(
 	    'name'    => 'plugin_abook_carddav_username',
 	    'caption' => _("Username"),
 	    'type'    => SMOPT_TYPE_STRING,
+	    'initial_value' => $abook_username,
     );
     $optpage_data['vals']['abook_carddav'][] = array(
 	    'name'    => 'plugin_abook_carddav_password',
 	    'caption' => _("Password"),
 	    'type'    => SMOPT_TYPE_STRING,
+	    'initial_value' => $abook_password,
     );
     $optpage_data['vals']['abook_carddav'][] = array(
 	    'name'    => 'plugin_abook_carddav_writeable',
-	    'caption' => _("Writeable (nickname field shows part of vcard URI)"),
+	    'caption' => _("Writeable (nickname field reserved for vcard URI)"),
 	    'type'    => SMOPT_TYPE_BOOLEAN,
+	    'initial_value' => $abook_writeable,
     );
     $optpage_data['vals']['abook_carddav'][] = array(
 	    'name'    => 'plugin_abook_carddav_listing',
 	    'caption' => _("Listing allowed (otherwise, only addressbook search is useful)"),
 	    'type'    => SMOPT_TYPE_BOOLEAN,
+	    'initial_value' => $abook_listing,
     );
 }
 
