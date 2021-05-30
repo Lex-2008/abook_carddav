@@ -95,6 +95,7 @@ class abook_carddav extends addressbook_backend {
      *         * or array of addresses (arrays)
      */
     function run_query($query, $match_all=false, $limit=0) {
+	$ret = array();
 	// TODO: add nickname to list of fields if $this->writeable
 	$all=$this->abook->query($query,["FN", "N", "EMAIL", "ORG"],$match_all,$limit);
 	/*
