@@ -24,6 +24,8 @@ function squirrelmail_plugin_init_abook_carddav() {
 
   $squirrelmail_plugin_hooks['abook_init']['abook_carddav'] = 'abook_carddav_init';
   $squirrelmail_plugin_hooks['abook_add_class']['abook_carddav'] = 'abook_carddav_class';
+  $squirrelmail_plugin_hooks['optpage_loadhook_display']['abook_carddav'] = 'abook_carddav_optpage';
+
 }
 
 /**
@@ -38,7 +40,24 @@ function abook_carddav_init(&$argv) {
     bindtextdomain ('abook_carddav', SM_PATH . 'locale');
     textdomain ('abook_carddav');
 
-    $r=$abook->add_backend('carddav',array('name'=>_("CardDAV Address Book")));
+    // TODO: consider multiple uris
+    $abook_uri = getPref($data_dir, $username, 'plugin_abook_carddav_abook_uri');
+    $abook_base_uri = getPref($data_dir, $username, 'plugin_abook_carddav_base_uri');
+    $abook_username = getPref($data_dir, $username, 'plugin_abook_carddav_username');
+    $abook_password = getPref($data_dir, $username, 'plugin_abook_carddav_password');
+    $abook_writeable = getPref($data_dir, $username, 'plugin_abook_carddav_writeable');
+    $abook_listing = getPref($data_dir, $username, 'plugin_abook_carddav_listing');
+    if(substr_compare($abook_uri, 'http', 0)) {
+	    $r=$abook->add_backend('carddav',array(
+		    'name'=>_("CardDAV Address Book"),
+		    'abook_uri'=>$abook_uri,
+		    'base_uri'=>$abook_base_uri,
+		    'username'=>$abook_username,
+		    'password'=>$abook_password,
+		    'writeable'=>$abook_writeable,
+		    'listing'=>$abook_listing,
+	    ));
+    }
 
     bindtextdomain ('squirrelmail', SM_PATH . 'locale');
     textdomain ('squirrelmail');
@@ -48,11 +67,58 @@ function abook_carddav_class() {
     bindtextdomain ('abook_carddav', SM_PATH . 'locale');
     textdomain ('abook_carddav');
 
-    require_once(SM_PATH . 'plugins/abook_carddav/abook_class.php');
+    // load file only if $abook_uri is set
+    $abook_uri = getPref($data_dir, $username, 'plugin_abook_carddav_abook_uri');
+    if(substr_compare($abook_uri, 'http', 0)) {
+	    require_once(SM_PATH . 'plugins/abook_carddav/abook_class.php');
+    }
 
     bindtextdomain ('squirrelmail', SM_PATH . 'locale');
     textdomain ('squirrelmail');
 }
+
+function abook_carddav_optpage() {
+  global $optpage_data;
+  global $username, $data_dir;
+
+    sq_change_text_domain('abook_carddav');
+    $optpage_data['grps']['abook_carddav'] = _("CardDAV Address Book");
+    $optpage_data['vals']['abook_carddav'][] = array(
+	    'name'    => 'plugin_abook_carddav_abook_uri',
+	    'caption' => _("URI of addressbook - MUST start with 'http' (both 'http://' and 'https://' are ok)"),
+	    'trailing_text' => _("use <a href=\"...\">discovery</a> page to get one"),
+	    'type'    => SMOPT_TYPE_STRING,
+	    // 'initial_value' => $abook_uri,
+    );
+    $optpage_data['vals']['abook_carddav'][] = array(
+	    'name'    => 'plugin_abook_carddav_base_uri',
+	    'caption' => _("base URI - usually a server name with protocol and port"),
+	    'trailing_text' => _("use <a href=\"...\">discovery</a> page to get one"),
+	    'type'    => SMOPT_TYPE_STRING,
+	    // 'initial_value' => $abook_uri,
+    );
+    $optpage_data['vals']['abook_carddav'][] = array(
+	    'name'    => 'plugin_abook_carddav_username',
+	    'caption' => _("Username"),
+	    'type'    => SMOPT_TYPE_STRING,
+    );
+    $optpage_data['vals']['abook_carddav'][] = array(
+	    'name'    => 'plugin_abook_carddav_password',
+	    'caption' => _("Password"),
+	    'type'    => SMOPT_TYPE_STRING,
+    );
+    $optpage_data['vals']['abook_carddav'][] = array(
+	    'name'    => 'plugin_abook_carddav_writeable',
+	    'caption' => _("Writeable (nickname field shows part of vcard URI)"),
+	    'type'    => SMOPT_TYPE_BOOLEAN,
+    );
+    $optpage_data['vals']['abook_carddav'][] = array(
+	    'name'    => 'plugin_abook_carddav_listing',
+	    'caption' => _("Listing allowed (otherwise, only addressbook search is useful)"),
+	    'type'    => SMOPT_TYPE_BOOLEAN,
+    );
+}
+
 
 /**
  * shows plugin's version

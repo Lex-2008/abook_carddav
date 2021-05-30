@@ -34,22 +34,18 @@ class abook_carddav extends addressbook_backend {
       
     /* Constructor */
     function abook_carddav($param) {
-        $this->sname = _("carddav address book");
+	// defaults
+        $this->sname = _("CardDAV Address Book");
          
         if (is_array($param)) {
-            if (!empty($param['name'])) {
-               $this->sname = $param['name'];
-            }
-
-            if (isset($param['writeable'])) {
-               $this->writeable = $param['writeable'];
-            }
-
-            if (isset($param['listing'])) {
-               $this->listing = $param['listing'];
-            }
-
-            return $this->open(true);
+            if (!empty($param['name'])) { $this->sname = $param['name']; }
+            if (!empty($param['abook_uri'])) { $this->abook_uri = $param['abook_uri']; }
+            if (!empty($param['base_uri'])) { $this->base_uri = $param['base_uri']; }
+            if (!empty($param['username'])) { $this->username = $param['username']; }
+            if (!empty($param['password'])) { $this->password = $param['password']; }
+            if (isset($param['writeable'])) { $this->writeable = $param['writeable']; }
+            if (isset($param['listing'])) { $this->listing = $param['listing']; }
+            return $this->open();
         }
         else {
             return $this->set_error('Invalid argument to constructor');
@@ -60,15 +56,13 @@ class abook_carddav extends addressbook_backend {
      *
      */
     function open() {
-      // backend open function
-      $this->account = new Account(DISCOVERY_URI, USERNAME, PASSWORD);
-	// Use stored addressbook uri if it exists
-        if(defined('abook_uri')){
-                $this->abook = new AddressbookCollection(abook_uri, $this->account);
-                // TODO: check that it's valid
-              return true;
-        }
+	    // backend open function
+	    $this->account = new Account($this->base_uri, $this->username, $this->password, $this->base_uri);
+	    $this->abook = new AddressbookCollection($this->abook_uri, $this->account);
+	    // TODO: check that it's valid
+	    return true;
 
+	    /* TODO: move this to discover page
 	// Discover the addressbooks for that account
 	try {
 	    $discover = new Discovery();
@@ -83,37 +77,26 @@ class abook_carddav extends addressbook_backend {
 	// HINT: use this line to get your discovered addressbook URI
 	// echo "discovered: " . $this->abook->getUri();
       return true;
+	     */
     }
 
     /**
-     *
+     * Run query against addressbook and return squurrelmail-type address(es)
+     * Params are same as in https://mstilkerich.github.io/carddavclient/classes/MStilkerich-CardDavClient-AddressbookCollection.html#method_query
+     * except the lack of 2nd parameter:
+     * @param array $query
+     *  The query filter conditions, for format see https://mstilkerich.github.io/carddavclient/classes/MStilkerich-CardDavClient-XmlElements-Filter.html#method___construct
+     * @param bool $matchAll
+     *  Whether all or any of the conditions needs to match.
+     * @param int $limit
+     *  Tell the server to return at most $limit results. 0 means no limit.
+     * @return either:
+     *         * a single address (array) - if $limit==1
+     *         * or array of addresses (arrays)
      */
-    function close() {
-      // ADDME: backend close function
-
-    }
-      
-      
-    /* ========================== Public ======================== */
-
-    /**
-     * Search addressesbook for entries where any field matches expr.
-     * It's expected to support * and ? wildcards, and search all fields in any position.
-     * Note that currently, it does not.
-     * @param expr string search expression.
-     * @return array of addresses (arrays)
-     */
-    function search($expr) {
-        $ret = array();
-
-        /* To be replaced by advanded search expression parsing */
-        if(is_array($expr)) { return; }
-
-	// list all addresses where any of these fields contains $expr.
-	// wildcards not supported.
-	// Also note that we don't check for presence of email here,
-	// this will be filtered out later
-	$all=$this->abook->query(['FN' => "/$expr/", 'EMAIL' => "/$expr/", 'ORG' => "/$expr/", 'NOTE' => "/$expr/"],["FN", "N", "EMAIL", "ORG"]);
+    function run_query($query, $match_all=false, $limit=0) {
+	// TODO: add nickname to list of fields if $this->writeable
+	$all=$this->abook->query($query,["FN", "N", "EMAIL", "ORG"],$match_all,$limit);
 	/*
 	Returns an array of matched VCards:
 	The keys of the array are the URIs of the vcards
@@ -126,7 +109,10 @@ class abook_carddav extends addressbook_backend {
 		if(!isset($vcard->EMAIL)) { continue; }
 		$names = $vcard->N->getParts();
 		// last,first,additional,prefix,suffix
-		array_push($ret,array(
+		// TODO: if !$this->writeable then we want to add one row per each email this vcard has
+		// foreach($vcard->EMAIL as $email) { ... }
+		$value = array(
+			    // TODO: nickname depends on $this->writeable
 			      'nickname' => substr($uri, $abook_uri_len),
                                   'name' => (string)$vcard->FN,
                              'firstname' => (string)$names[1],
@@ -134,11 +120,34 @@ class abook_carddav extends addressbook_backend {
                         	 'email' => (string)$vcard->EMAIL,
                         	 'label' => (string)$vcard->ORG,
                                'backend' => $this->bnum,
-                        	'source' => $this->sname));
+                        	'source' => $this->sname);
+		if($limit == 1) { return $value; }
+		array_push($ret,$value);
 	}
+	return $ret;
+    }
+      
+    /* ========================== Public ======================== */
 
+    /**
+     * Search addressesbook for entries where any field matches expr.
+     * It's expected to support * and ? wildcards, and search all fields in any position.
+     * Note that currently, it does not.
+     * @param expr string search expression.
+     * @return array of addresses (arrays)
+     */
+    function search($expr) {
 
-        return $ret;
+        /* To be replaced by advanded search expression parsing */
+        if(is_array($expr)) { return; }
+
+	if ($expr=='*') { return $this->list_addr(); }
+
+	// list all addresses where any of these fields contains $expr.
+	// wildcards are not supported.
+	// Also note that we don't check for presence of email in the filter,
+	// this will be filtered out inside run_query
+	return $this->run_query(['FN' => "/$expr/", 'EMAIL' => "/$expr/", 'ORG' => "/$expr/", 'NOTE' => "/$expr/"]);
     }
      
     /**
@@ -174,6 +183,7 @@ class abook_carddav extends addressbook_backend {
 		$vcard = $one['vcard'];
 		$names = $vcard->N->getParts();
 		return array(
+			    // TODO: nickname depends on $this->writeable
 			'nickname' => substr($uri, $abook_uri_len),
 			'name' => (string)$vcard->FN,
 			'firstname' => (string)$names[1],
@@ -193,31 +203,11 @@ class abook_carddav extends addressbook_backend {
 		$filter=['EMAIL' => "/$value/="];
 	}
 	if($field ==  SM_ABOOK_FIELD_LABEL) {
-		$filter=['ORG' => "/$value/="];
+		$filter=['ORG' => "/$value/=", 'EMAIL' => "//"];
 	}
 	if(!isset($filter)) { return array(); }
 
-	$all=$this->abook->query($filter,["FN", "N", "EMAIL", "ORG"],true,1);
-	/*
-	Returns an array of matched VCards:
-	The keys of the array are the URIs of the vcards
-	The values are associative arrays with keys etag (type: string) and vcard (type: VCard)
-	 */
-	foreach($all as $uri => $one) {
-		$vcard = $one['vcard'];
-		if(!isset($vcard->EMAIL)) { continue; }
-		$names = $vcard->N->getParts();
-		// last,first,additional,prefix,suffix
-		return array(
-			'nickname' => substr($uri, $abook_uri_len),
-			'name' => (string)$vcard->FN,
-			'firstname' => (string)$names[1],
-			'lastname' => (string)$names[0],
-			'email' => (string)$vcard->EMAIL,
-			'label' => (string)$vcard->ORG,
-			'backend' => $this->bnum,
-			'source' => $this->sname);
-	}
+	return $this->run_query($filter,true,1);
     }
 
     /**
@@ -225,34 +215,8 @@ class abook_carddav extends addressbook_backend {
      * @return array of addresses (arrays)
      */
     function list_addr() {
-        $ret = array();
-
 	// list all addresses having an email
-	$all=$this->abook->query(['EMAIL' => "//"],["FN", "N", "EMAIL", "ORG"]);
-	/*
-	Returns an array of matched VCards:
-	The keys of the array are the URIs of the vcards
-	The values are associative arrays with keys etag (type: string) and vcard (type: VCard)
-	*/
-
-	$abook_uri_len=strlen($this->abook->getUriPath());
-	foreach($all as $uri => $one) {
-		$vcard = $one['vcard'];
-		// if(!isset($vcard->EMAIL)) { continue; }
-		$names = $vcard->N->getParts();
-		// last,first,additional,prefix,suffix
-		array_push($ret,array(
-			      'nickname' => substr($uri, $abook_uri_len),
-                                  'name' => (string)$vcard->FN,
-                             'firstname' => (string)$names[1],
-                              'lastname' => (string)$names[0],
-                        	 'email' => (string)$vcard->EMAIL,
-                        	 'label' => (string)$vcard->ORG,
-                               'backend' => $this->bnum,
-                        	'source' => $this->sname));
-	}
-
-        return $ret;
+	return $this->run_query(['EMAIL' => "//"]);
     }
 
     /**
