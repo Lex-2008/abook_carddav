@@ -93,21 +93,21 @@ function abook_carddav_optpage() {
     $optpage_data['grps']['abook_carddav'] = _("CardDAV Address Book");
     $optpage_data['vals']['abook_carddav'][] = array(
 	    'name'    => 'plugin_abook_carddav_abook_uri',
-	    'caption' => _("URI of addressbook"),
+	    'caption' => _("Addressbool URI"),
 	    'type'    => SMOPT_TYPE_STRING,
 	    'initial_value' => $abook_uri,
     );
     $optpage_data['vals']['abook_carddav'][] = array(
 	    'name'    => 'plugin_abook_carddav_base_uri',
-	    'caption' => _("base URI"),
+	    'caption' => _("Base URL"),
 	    'type'    => SMOPT_TYPE_STRING,
 	    'initial_value' => $abook_base_uri,
     );
     $optpage_data['vals']['abook_carddav'][] = array(
 	    'name'    => 'plugin_abook_carddav_dicsover_link',
-	    'caption' => _("Discover"),
+	    'caption' => _("Hint"),
 	    'type'    => SMOPT_TYPE_COMMENT,
-	    'comment' => _("Use <a href=\"...\">discover</a> page to get these values"),
+	    'comment' => _("Use <a href=\"../plugins/abook_carddav/discover.php\">discover</a> page to get these values"),
     );
     $optpage_data['vals']['abook_carddav'][] = array(
 	    'name'    => 'plugin_abook_carddav_username',
@@ -123,14 +123,16 @@ function abook_carddav_optpage() {
     );
     $optpage_data['vals']['abook_carddav'][] = array(
 	    'name'    => 'plugin_abook_carddav_writeable',
-	    'caption' => _("Writeable (nickname field reserved for vcard URI)"),
+	    'caption' => _("Writeable"),
 	    'type'    => SMOPT_TYPE_BOOLEAN,
+	    'trailing_text' => _("nickname field used for vcard URI"),
 	    'initial_value' => $abook_writeable,
     );
     $optpage_data['vals']['abook_carddav'][] = array(
 	    'name'    => 'plugin_abook_carddav_listing',
-	    'caption' => _("Listing allowed (otherwise, only addressbook search is useful)"),
+	    'caption' => _("Listing allowed"),
 	    'type'    => SMOPT_TYPE_BOOLEAN,
+	    'trailing_text' => _("otherwise, only search can be used"),
 	    'initial_value' => $abook_listing,
     );
 }
