@@ -55,28 +55,24 @@ class abook_carddav extends addressbook_backend {
     }
 
     /**
-     * Given a $vcard object and its $uri, returns squirrelmail contact (array).
-     * Optional $email arg overwrites the one stored in vcard.
+     * Given a $vcard object, returns squirrelmail contact (array).
+     * $uri is needed to specify nickname if $this->writeable
+     * Optional $email and $tel args overwrite those stored in vcard.
      * Respects $this->writeable:
      * for writeable addressbooks, 'nickname' must be unique identifier -
-     *   in our case, last part of uid id used
+     *   in our case, last part of uid is used
      * for non-writeable addressbooks, 'nickname' doesn't matter that much -
      *   so we put ORG there
      */
-    function vcard2sq($uri, $vcard, $email=null, $tel=null) {
+    function vcard2sq($uri, $vcard, $email=null, $tel='def') {
+	    if(!$email) { $email = (string)$vcard->EMAIL; }
+	    if($tel=='def') { $tel = (string)$vcard->TEL; }
 	    if($this->writeable) {
 		    $nickname = substr($uri, $this->abook_uri_len);
 		    $label = (string)$vcard->ORG;
 	    } else {
 		    $nickname = (string)$vcard->ORG;
-		    if($tel) {
-			    $label = $tel;
-		    } else {
-			    $label = (string)$vcard->TEL;
-		    }
-	    }
-	    if(!$email) {
-		    $email = (string)$vcard->EMAIL;
+		    $label = $tel;
 	    }
 	    $names = $vcard->N->getParts();
 	    // last,first,additional,prefix,suffix
@@ -108,7 +104,7 @@ class abook_carddav extends addressbook_backend {
     function run_query($query, $match_all=false, $limit=0) {
 	$ret = array();
 	$fields = ["FN", "N", "EMAIL", "ORG"];
-	if(!$this->writeable) { $fields[] = "TEL";
+	if(!$this->writeable) { $fields[] = "TEL"; }
 	$all=$this->abook->query($query,$fields,$match_all,$limit);
 	/*
 	Returns an array of matched VCards:
@@ -120,19 +116,13 @@ class abook_carddav extends addressbook_backend {
 		$vcard = $one['vcard'];
 		if(!isset($vcard->EMAIL)) { continue; }
 		if($this->writeable) {
-			// all one line per each vcard
+			// one line per each vcard
 			$ret[] = $this->vcard2sq($uri, $vcard);
 		} else {
-			// pick a TEL for each EMAIL.
-			// if # of TELs is greater than EMAILs - extra are ignored
-			// if # of EMAILs is greater than TELs - empty TELs are shown
-			// TODO: could this be rewritten better?
-			$tels = array();
-			foreach($vcard->TEL as $tel) { $tels[] = (string)$tel; }
-			$i=0;
-			foreach($vcard->EMAIL as $email) {
-				// all one line per each email
-				$ret[] = $this->vcard2sq($uri, $vcard, $email, @$tels[$i++]);
+			// one line per each email
+			foreach($vcard->EMAIL as $i => $email) {
+				// also show one TEL for one EMAIL (extra TELs are ignored)
+				$ret[] = $this->vcard2sq($uri, $vcard, $email, (string)$vcard->TEL[$i]);
 			}
 		}
 		if($limit == 1) { return $ret[0]; }
@@ -194,22 +184,14 @@ class abook_carddav extends addressbook_backend {
 			vcard(VCard): VCard as Sabre/VObject VCard
 		 */
 		$vcard = $one['vcard'];
+		// TODO: verify that something was returned
     		return $this->vcard2sq($uri, $vcard);
 	}
-	if($field == SM_ABOOK_FIELD_FIRSTNAME) {
-		// TODO: this will be harder
-	}
-	if($field == SM_ABOOK_FIELD_LASTNAME) {
-		$filter=['N' => "/$value;/^", 'EMAIL' => "//"];
-	}
-	if($field == SM_ABOOK_FIELD_EMAIL) {
-		$filter=['EMAIL' => "/$value/="];
-	}
-	if($field ==  SM_ABOOK_FIELD_LABEL) {
-		$filter=['ORG' => "/$value/=", 'EMAIL' => "//"];
-	}
+	if($field == SM_ABOOK_FIELD_FIRSTNAME) { } // TODO: this will be harder
+	if($field == SM_ABOOK_FIELD_LASTNAME) { $filter=['N' => "/$value;/^", 'EMAIL' => "//"]; }
+	if($field == SM_ABOOK_FIELD_EMAIL) { $filter=['EMAIL' => "/$value/="]; }
+	if($field ==  SM_ABOOK_FIELD_LABEL) { $filter=['ORG' => "/$value/=", 'EMAIL' => "//"]; }
 	if(!isset($filter)) { return array(); }
-
 	return $this->run_query($filter,true,1);
     }
 
