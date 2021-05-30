@@ -115,11 +115,11 @@ class abook_carddav extends addressbook_backend {
 		if(!isset($vcard->EMAIL)) { continue; }
 		if($this->writeable) {
 			// all one line per each vcard
-			$ret[] = $this.vcard2sq($uri, $vcard);
+			$ret[] = $this->vcard2sq($uri, $vcard);
 		} else {
 			foreach($vcard->EMAIL as $email) {
 				// all one line per each email
-				$ret[] = $this.vcard2sq($uri, $vcard, $email);
+				$ret[] = $this->vcard2sq($uri, $vcard, $email);
 			}
 		}
 		if($limit == 1) { return $ret[0]; }
@@ -181,7 +181,7 @@ class abook_carddav extends addressbook_backend {
 			vcard(VCard): VCard as Sabre/VObject VCard
 		 */
 		$vcard = $one['vcard'];
-    		return vcard2sq($uri, $vcard);
+    		return $this->vcard2sq($uri, $vcard);
 	}
 	if($field == SM_ABOOK_FIELD_FIRSTNAME) {
 		// TODO: this will be harder
@@ -205,6 +205,7 @@ class abook_carddav extends addressbook_backend {
      * @return array of addresses (arrays)
      */
     function list_addr() {
+	if(!$this->listing) { return array(); }
 	// list all addresses having an email
 	return $this->run_query(['EMAIL' => "//"]);
     }
