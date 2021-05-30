@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 	<table width="100%" cellpadding="2" cellspacing="0" border="0">
 
 	<tr>
-	<td align="right" valign="middle">URI to discover:</td>
+	<td align="right" valign="middle">URL to discover:</td>
 	<td align="left"><input type="text" name="url"> 
 	Probably hostname is enough, maybe with protocol (defaults to <b>https</b>).
 	</td>
@@ -101,7 +101,7 @@ try {
 <?php
 echo '<p>Addressbooks discovered: ' , count($abooks) , '</p>';
 if (count($abooks) < 1) {
-	echo '<p>Please try again</p></fieldset></body></html>';
+	echo '</fieldset><p>Please <a href="discover.php">try again</a></p></body></html>';
 	exit(0);
 }
 ?>
