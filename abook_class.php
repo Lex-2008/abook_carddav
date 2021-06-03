@@ -168,23 +168,26 @@ class abook_carddav extends addressbook_backend {
      */
     function lookup($value, $field=SM_ABOOK_FIELD_NICKNAME) {
 
-        if (empty($value)) {
-            return array();
-        }
+        if (empty($value)) { return array(); }
 
 	$abook_uri_len=strlen($this->abook->getUriPath());
 	if($field == SM_ABOOK_FIELD_NICKNAME) {
 		// TODO: edit this if we use different nick-naming scheme
 		$uri = $this->abook->getUriPath() . $value;
-		$one = $this->abook->getCard($uri);
-		/* returns Associative array with keys:
-			etag(string): Entity tag of the returned card
-			vcf(string): VCard as string
-			vcard(VCard): VCard as Sabre/VObject VCard
-		 */
-		$vcard = $one['vcard'];
-		// TODO: verify that something was returned
-    		return $this->vcard2sq($uri, $vcard);
+		try {
+			$one = $this->abook->getCard($uri);
+			/* returns Associative array with keys:
+				etag(string): Entity tag of the returned card
+				vcf(string): VCard as string
+				vcard(VCard): VCard as Sabre/VObject VCard
+			 */
+			$vcard = $one['vcard'];
+			return $this->vcard2sq($uri, $vcard);
+		} catch (\Exception $e) {
+			// no card was returned
+			return array();
+		}
+
 	}
 	if($field == SM_ABOOK_FIELD_FIRSTNAME) { } // TODO: this will be harder
 	if($field == SM_ABOOK_FIELD_LASTNAME) { $filter=['N' => "/$value;/^", 'EMAIL' => "//"]; }
