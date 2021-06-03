@@ -28,6 +28,16 @@ function squirrelmail_plugin_init_abook_carddav() {
 
 }
 
+function abook_get_password($data, $opt){
+	    require_once(SM_PATH . 'functions/auth.php');
+	    require_once(SM_PATH . 'functions/strings.php');
+	    switch ($opt) {
+	    case '0': return sqauth_read_password();
+	    case '1': return OneTimePadDecrypt($data, base64_encode(sqauth_read_password()));
+	    case '2': return $data;
+	    }
+}
+
 /**
  * Initialized address book backend
  */
@@ -45,7 +55,9 @@ function abook_carddav_init(&$argv) {
     $abook_uri = getPref($data_dir, $username, 'plugin_abook_carddav_abook_uri');
     $abook_base_uri = getPref($data_dir, $username, 'plugin_abook_carddav_base_uri');
     $abook_username = getPref($data_dir, $username, 'plugin_abook_carddav_username');
-    $abook_password = getPref($data_dir, $username, 'plugin_abook_carddav_password');
+    $abook_password_text = getPref($data_dir, $username, 'plugin_abook_carddav_password');
+    $abook_password_opt = getPref($data_dir, $username, 'plugin_abook_carddav_password_opt', '2');
+    $abook_password = abook_get_password($abook_password_text, $abook_password_opt);
     $abook_writeable = getPref($data_dir, $username, 'plugin_abook_carddav_writeable');
     $abook_listing = getPref($data_dir, $username, 'plugin_abook_carddav_listing');
     if(substr($abook_uri, 0,4) == 'http'){
@@ -86,7 +98,12 @@ function abook_carddav_optpage() {
     $abook_uri = getPref($data_dir, $username, 'plugin_abook_carddav_abook_uri');
     $abook_base_uri = getPref($data_dir, $username, 'plugin_abook_carddav_base_uri');
     $abook_username = getPref($data_dir, $username, 'plugin_abook_carddav_username');
-    $abook_password = getPref($data_dir, $username, 'plugin_abook_carddav_password');
+    $abook_password_opt = getPref($data_dir, $username, 'plugin_abook_carddav_password_opt', '2');
+    switch($abook_password_opt){
+	    case '0': $abook_password = ''; break;
+	    case '1': $abook_password = '*******'; break;
+	    case '2': $abook_password = getPref($data_dir, $username, 'plugin_abook_carddav_password'); break;
+    }
     $abook_writeable = getPref($data_dir, $username, 'plugin_abook_carddav_writeable');
     $abook_listing = getPref($data_dir, $username, 'plugin_abook_carddav_listing');
     sq_change_text_domain('abook_carddav');
@@ -121,6 +138,17 @@ function abook_carddav_optpage() {
 	    'caption' => _("Password"),
 	    'type'    => SMOPT_TYPE_STRING,
 	    'initial_value' => $abook_password,
+	    'save'    => 'plugin_abook_carddav_password_save',
+    );
+    $optpage_data['vals']['abook_carddav'][] = array(
+	    'name'    => 'plugin_abook_carddav_password_opt',
+	    'caption' => _("Password type/encryption"),
+	    'type'    => SMOPT_TYPE_STRLIST,
+	    'posvals' => array('0' => _("Use same password for CardDAV as for IMAP (above option is ignored)"),
+	                       '1' => _("Encrypt your CardDAV password using your IMAP password"),
+	                       '2' => _("Store your CardDAV password in plaintext (least secure)")),
+	    'initial_value' => $abook_password_opt,
+	    'save'    => 'plugin_abook_carddav_password_opt_save',
     );
     $optpage_data['vals']['abook_carddav'][] = array(
 	    'name'    => 'plugin_abook_carddav_writeable',
@@ -138,12 +166,33 @@ function abook_carddav_optpage() {
     );
 }
 
+function plugin_abook_carddav_password_save($option){
+	global $plugin_abook_carddav_password;
+	$plugin_abook_carddav_password = $option->$new_value;
+}
+
+function plugin_abook_carddav_password_opt_save($option){
+	global $plugin_abook_carddav_password;
+	save_option($option);
+	switch($option->new_value){
+	case '0': $plugin_abook_carddav_password = ''; break;
+	case '1':
+		if(preg_match('/^\**$/', $plugin_abook_carddav_password)) { break; }
+		require_once(SM_PATH . 'functions/auth.php');
+		require_once(SM_PATH . 'functions/strings.php');
+		$plugin_abook_carddav_password = OneTimePadEncrypt($plugin_abook_carddav_password, base64_encode(sqauth_read_password()));
+		break;
+	case '2': break;
+	}
+	setPref($data_dir, $username, 'plugin_abook_carddav_password', $plugin_abook_carddav_password);
+}
+
 
 /**
  * shows plugin's version
  * @return string
  */
 function abook_carddav_version() {
-  return '1.0';
+  return '1.1';
 }
 ?>
