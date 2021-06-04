@@ -184,7 +184,7 @@ function abook_carddav_optpage() {
 function plugin_abook_carddav_password_save($option){
 	global $username, $data_dir;
 	$opt = getPref($data_dir, $username, 'plugin_abook_carddav_password_opt', '2');
-	abook_set_password($option->$new_value, $opt);
+	abook_set_password($option->new_value, $opt);
 }
 
 function plugin_abook_carddav_password_opt_save($option){
@@ -195,7 +195,7 @@ function plugin_abook_carddav_password_opt_save($option){
 	$abook_password = abook_get_password($abook_password_text, $abook_password_opt);
 	save_option($option);
 	// reencrypt it
-	abook_set_password($abook_password, $option->$new_value);
+	abook_set_password($abook_password, $option->new_value);
 }
 
 
