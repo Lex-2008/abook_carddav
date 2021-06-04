@@ -38,6 +38,21 @@ function abook_get_password($data, $opt){
 	    }
 }
 
+function abook_set_password($password, $opt){
+	global $username, $data_dir;
+	switch ($opt) {
+	case '0': $data = ''; break;
+	case '1':
+		if(preg_match('/^\**$/', $password)) { return; }
+		require_once(SM_PATH . 'functions/auth.php');
+		require_once(SM_PATH . 'functions/strings.php');
+		$data = OneTimePadEncrypt($password, base64_encode(sqauth_read_password()));
+		break;
+	case '2': $data = $password; break;
+	}
+	setPref($data_dir, $username, 'plugin_abook_carddav_password', $data);
+}
+
 /**
  * Initialized address book backend
  */
@@ -167,24 +182,20 @@ function abook_carddav_optpage() {
 }
 
 function plugin_abook_carddav_password_save($option){
-	global $plugin_abook_carddav_password;
-	$plugin_abook_carddav_password = $option->$new_value;
+	global $username, $data_dir;
+	$opt = getPref($data_dir, $username, 'plugin_abook_carddav_password_opt', '2');
+	abook_set_password($option->$new_value, $opt);
 }
 
 function plugin_abook_carddav_password_opt_save($option){
-	global $plugin_abook_carddav_password;
+	global $username, $data_dir;
+	// get current plassword
+	$abook_password_text = getPref($data_dir, $username, 'plugin_abook_carddav_password');
+	$abook_password_opt = getPref($data_dir, $username, 'plugin_abook_carddav_password_opt', '2');
+	$abook_password = abook_get_password($abook_password_text, $abook_password_opt);
 	save_option($option);
-	switch($option->new_value){
-	case '0': $plugin_abook_carddav_password = ''; break;
-	case '1':
-		if(preg_match('/^\**$/', $plugin_abook_carddav_password)) { break; }
-		require_once(SM_PATH . 'functions/auth.php');
-		require_once(SM_PATH . 'functions/strings.php');
-		$plugin_abook_carddav_password = OneTimePadEncrypt($plugin_abook_carddav_password, base64_encode(sqauth_read_password()));
-		break;
-	case '2': break;
-	}
-	setPref($data_dir, $username, 'plugin_abook_carddav_password', $plugin_abook_carddav_password);
+	// reencrypt it
+	abook_set_password($abook_password, $option->$new_value);
 }
 
 
