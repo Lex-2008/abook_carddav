@@ -33,7 +33,7 @@ function abook_get_password($data, $opt){
 	    require_once(SM_PATH . 'functions/strings.php');
 	    switch ($opt) {
 	    case '0': return sqauth_read_password();
-	    case '1': return OneTimePadDecrypt($data, base64_encode(sqauth_read_password()));
+	    case '1': return OneTimePadDecrypt($data, base64_encode(hash("sha256",sqauth_read_password(),true)));
 	    case '2': return $data;
 	    }
 }
@@ -46,7 +46,7 @@ function abook_set_password($password, $opt){
 		if(preg_match('/^\**$/', $password)) { return; }
 		require_once(SM_PATH . 'functions/auth.php');
 		require_once(SM_PATH . 'functions/strings.php');
-		$data = OneTimePadEncrypt($password, base64_encode(sqauth_read_password()));
+		$data = OneTimePadEncrypt($password, base64_encode(hash("sha256",sqauth_read_password(),true)));
 		break;
 	case '2':
 		if(preg_match('/^\**$/', $password)) { return; }
@@ -207,6 +207,6 @@ function plugin_abook_carddav_password_opt_save($option){
  * @return string
  */
 function abook_carddav_version() {
-  return '1.1';
+  return '2.0';
 }
 ?>
