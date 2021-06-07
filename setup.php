@@ -48,7 +48,10 @@ function abook_set_password($password, $opt){
 		require_once(SM_PATH . 'functions/strings.php');
 		$data = OneTimePadEncrypt($password, base64_encode(sqauth_read_password()));
 		break;
-	case '2': $data = $password; break;
+	case '2':
+		if(preg_match('/^\**$/', $password)) { return; }
+		$data = $password;
+		break;
 	}
 	setPref($data_dir, $username, 'plugin_abook_carddav_password', $data);
 }
@@ -114,10 +117,10 @@ function abook_carddav_optpage() {
     $abook_base_uri = getPref($data_dir, $username, 'plugin_abook_carddav_base_uri');
     $abook_username = getPref($data_dir, $username, 'plugin_abook_carddav_username');
     $abook_password_opt = getPref($data_dir, $username, 'plugin_abook_carddav_password_opt', '2');
-    switch($abook_password_opt){
-	    case '0': $abook_password = ''; break;
-	    case '1': $abook_password = '*******'; break;
-	    case '2': $abook_password = getPref($data_dir, $username, 'plugin_abook_carddav_password'); break;
+    if($abook_password_opt == '0'){
+	    $abook_password = '';
+    } else {
+	    $abook_password = '*******';
     }
     $abook_writeable = getPref($data_dir, $username, 'plugin_abook_carddav_writeable');
     $abook_listing = getPref($data_dir, $username, 'plugin_abook_carddav_listing');
@@ -189,12 +192,12 @@ function plugin_abook_carddav_password_save($option){
 
 function plugin_abook_carddav_password_opt_save($option){
 	global $username, $data_dir;
-	// get current plassword
+	// get current password
 	$abook_password_text = getPref($data_dir, $username, 'plugin_abook_carddav_password');
 	$abook_password_opt = getPref($data_dir, $username, 'plugin_abook_carddav_password_opt', '2');
 	$abook_password = abook_get_password($abook_password_text, $abook_password_opt);
 	save_option($option);
-	// reencrypt it
+	// reencrypt the password
 	abook_set_password($abook_password, $option->new_value);
 }
 
