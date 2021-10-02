@@ -121,7 +121,7 @@ class abook_carddav extends addressbook_backend {
 			// one line per each email
 			foreach($vcard->EMAIL as $i => $email) {
 				// also show one TEL for one EMAIL (extra TELs are ignored)
-				$ret[] = $this->vcard2sq($uri, $vcard, $email, (string)$vcard->TEL[$i]);
+				$ret[] = $this->vcard2sq($uri, $vcard, $email, (string)@$vcard->TEL[$i]);
 			}
 		}
 		if($limit == 1) { return $ret[0]; }
