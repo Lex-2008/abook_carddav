@@ -70,7 +70,7 @@ function abook_carddav_init(&$argv) {
     textdomain ('abook_carddav');
 
     // TODO: consider multiple uris
-    $abook_uri = getPref($data_dir, $username, 'plugin_abook_carddav_abook_uri');
+    $abook_uris = getPref($data_dir, $username, 'plugin_abook_carddav_abook_uri');
     $abook_base_uri = getPref($data_dir, $username, 'plugin_abook_carddav_base_uri');
     $abook_username = getPref($data_dir, $username, 'plugin_abook_carddav_username');
     $abook_password_text = getPref($data_dir, $username, 'plugin_abook_carddav_password');
@@ -78,16 +78,18 @@ function abook_carddav_init(&$argv) {
     $abook_password = abook_get_password($abook_password_text, $abook_password_opt);
     $abook_writeable = getPref($data_dir, $username, 'plugin_abook_carddav_writeable');
     $abook_listing = getPref($data_dir, $username, 'plugin_abook_carddav_listing');
-    if(substr($abook_uri, 0,4) == 'http'){
-	    $r=$abook->add_backend('carddav',array(
-		    'name'=>_("CardDAV Address Book"),
-		    'abook_uri'=>$abook_uri,
-		    'base_uri'=>$abook_base_uri,
-		    'username'=>$abook_username,
-		    'password'=>$abook_password,
-		    'writeable'=>$abook_writeable,
-		    'listing'=>$abook_listing,
-	    ));
+    foreach(explode(',', $abook_uris) as $abook_uri){
+	    if(substr($abook_uri, 0,4) == 'http'){
+		    $r=$abook->add_backend('carddav',array(
+			    'name'=>_("CardDAV Address Book"),
+			    'abook_uri'=>$abook_uri,
+			    'base_uri'=>$abook_base_uri,
+			    'username'=>$abook_username,
+			    'password'=>$abook_password,
+			    'writeable'=>$abook_writeable,
+			    'listing'=>$abook_listing,
+		    ));
+	    }
     }
 
     bindtextdomain ('squirrelmail', SM_PATH . 'locale');
